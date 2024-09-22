@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: oamdev/terraform-controller
+  repository: tranthang2804/environment
   tag: latest
   pullPolicy: Always
 

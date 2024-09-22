@@ -53,6 +53,12 @@ type SecretReference struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 
+// An AwsSecretReference is a reference to a secret in an Aws Secret.
+type AwsSecretReference struct {
+	// Arn of the secret.
+	AwsSecretArn string `json:"awsSecretArn"`
+}
+
 // A Reference to a named object.
 type Reference struct {
 	// Name of the referenced object.

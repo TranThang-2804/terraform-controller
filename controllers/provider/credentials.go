@@ -12,6 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/oam-dev/terraform-controller/api/v1beta1"
+
+	awssdk "github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/secretsmanager"
 )
 
 const (
@@ -110,6 +115,77 @@ func GetProviderCredentials(ctx context.Context, k8sClient client.Client, provid
 			return getBaiduCloudCredentials(secretData, name, namespace, region)
 		case string(huawei):
 			return getHuaWeiCloudCredentials(secretData, name, namespace, region)
+		default:
+			errMsg := "unsupported provider"
+			klog.InfoS(errMsg, "Provider", provider.Spec.Provider)
+			return nil, errors.New(errMsg)
+		}
+	case "AWSSecret":
+		var secret v1.Secret
+		secretRef := provider.Spec.Credentials.SecretRef
+    awsSecretRef := provider.Spec.Credentials.AwsSecretRef
+		name := secretRef.Name
+		namespace := secretRef.Namespace
+		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &secret); err != nil {
+			errMsg := "failed to get the Secret from Provider"
+			klog.ErrorS(err, errMsg, "Name", name, "Namespace", namespace)
+			return nil, errors.Wrap(err, errMsg)
+		}
+		secretData, ok := secret.Data[secretRef.Key]
+		if !ok {
+			return nil, errors.Errorf("in the provider %s, the key %s not found in the referenced secret %s", provider.Name, secretRef.Key, name)
+		}
+
+		// TODO: Implement geting from AWSSecret
+		credential, err := getAWSCredentials(secretData, name, namespace, region)
+		if err != nil {
+			return nil, err
+		}
+
+		sess, err := session.NewSession(&awssdk.Config{
+			Region: awssdk.String(credential["EnvAWSDefaultRegion"]),
+			Credentials: credentials.NewStaticCredentials(
+				credential["EnvAWSAccessKeyID"],
+				credential["EnvAWSSecretAccessKey"],
+				credential["EnvAWSSessionToken"], // assuming you have a session token
+			),
+		})
+		if err != nil {
+			klog.ErrorS(err, "Error creating session ")
+			return nil, err
+		}
+
+		svc := secretsmanager.New(sess)
+
+		input := &secretsmanager.GetSecretValueInput{
+			SecretId: awssdk.String(awsSecretRef.AwsSecretArn), // replace with your secret name
+		}
+
+		result, err := svc.GetSecretValue(input)
+		if err != nil {
+			klog.ErrorS(err, "Error retrieving secret ")
+			return nil, err
+		}
+
+		switch provider.Spec.Provider {
+		case string(aws):
+			return getAWSCredentials([]byte(*result.SecretString), name, namespace, region)
+		case string(gcp):
+			return getGCPCredentials([]byte(*result.SecretString), name, namespace, region)
+		case string(tencent):
+			return getTencentCloudCredentials([]byte(*result.SecretString), name, namespace, region)
+		case string(azure):
+			return getAzureCredentials([]byte(*result.SecretString), name, namespace)
+		case string(vsphere):
+			return getVSphereCredentials([]byte(*result.SecretString), name, namespace)
+		case string(ec):
+			return getECCloudCredentials([]byte(*result.SecretString), name, namespace)
+		case string(custom):
+			return getCustomCredentials([]byte(*result.SecretString), name, namespace)
+		case string(baidu):
+			return getBaiduCloudCredentials([]byte(*result.SecretString), name, namespace, region)
+		case string(huawei):
+			return getHuaWeiCloudCredentials([]byte(*result.SecretString), name, namespace, region)
 		default:
 			errMsg := "unsupported provider"
 			klog.InfoS(errMsg, "Provider", provider.Spec.Provider)

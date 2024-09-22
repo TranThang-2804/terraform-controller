@@ -45,6 +45,11 @@ type ProviderCredentials struct {
 	// that must be used to connect to the provider.
 	// +optional
 	SecretRef *crossplanetypes.SecretKeySelector `json:"secretRef,omitempty"`
+
+	// An AwsSecretRef is a reference to a secret key that contains the credentials
+	// that must be used to connect to the provider.
+	// +optional
+	AwsSecretRef *crossplanetypes.AwsSecretReference `json:"awsSecretRef,omitempty"`
 }
 
 // ProviderStatus defines the observed state of Provider.
