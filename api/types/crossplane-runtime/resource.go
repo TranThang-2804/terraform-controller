@@ -29,6 +29,10 @@ const (
 	// credentials from a secret.
 	CredentialsSourceSecret CredentialsSource = "Secret"
 
+	// CredentialsSourceSecret indicates that a provider should acquire
+	// credentials from a secret.
+	CredentialsSourceAwsSecret CredentialsSource = "AwsSecret"
+
 	// CredentialsSourceInjectedIdentity indicates that a provider should use
 	// credentials via its (pod's) identity; i.e. via IRSA for AWS,
 	// Workload Identity for GCP, Pod Identity for Azure, or in-cluster

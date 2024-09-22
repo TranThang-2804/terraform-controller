@@ -66,6 +66,7 @@ func (r *ProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		switch provider.Spec.Credentials.Source {
 		case crossplanetypes.CredentialsSourceInjectedIdentity:
 			break
+		case crossplanetypes.CredentialsSourceAwsSecret:
 		case crossplanetypes.CredentialsSourceSecret:
 			_, err := providercred.GetProviderCredentials(ctx, r.Client, &provider, provider.Spec.Region)
 			return err

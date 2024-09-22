@@ -120,10 +120,11 @@ func GetProviderCredentials(ctx context.Context, k8sClient client.Client, provid
 			klog.InfoS(errMsg, "Provider", provider.Spec.Provider)
 			return nil, errors.New(errMsg)
 		}
-	case "AWSSecret":
+	case "AwsSecret":
 		var secret v1.Secret
 		secretRef := provider.Spec.Credentials.SecretRef
-    awsSecretRef := provider.Spec.Credentials.AwsSecretRef
+		awsSecretArn := provider.Spec.Credentials.AwsSecretRef.AwsSecretArn
+    region := provider.Spec.Region
 		name := secretRef.Name
 		namespace := secretRef.Namespace
 		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &secret); err != nil {
@@ -132,33 +133,30 @@ func GetProviderCredentials(ctx context.Context, k8sClient client.Client, provid
 			return nil, errors.Wrap(err, errMsg)
 		}
 		secretData, ok := secret.Data[secretRef.Key]
+
 		if !ok {
 			return nil, errors.Errorf("in the provider %s, the key %s not found in the referenced secret %s", provider.Name, secretRef.Key, name)
 		}
 
-		// TODO: Implement geting from AWSSecret
 		credential, err := getAWSCredentials(secretData, name, namespace, region)
 		if err != nil {
 			return nil, err
 		}
 
-		sess, err := session.NewSession(&awssdk.Config{
-			Region: awssdk.String(credential["EnvAWSDefaultRegion"]),
+		sess := session.Must(session.NewSession(&awssdk.Config{
+			Region: awssdk.String(region),
 			Credentials: credentials.NewStaticCredentials(
-				credential["EnvAWSAccessKeyID"],
-				credential["EnvAWSSecretAccessKey"],
-				credential["EnvAWSSessionToken"], // assuming you have a session token
+				credential[EnvAWSAccessKeyID],
+				credential[EnvAWSSecretAccessKey],
+				credential[EnvAWSSessionToken],
 			),
-		})
-		if err != nil {
-			klog.ErrorS(err, "Error creating session ")
-			return nil, err
-		}
+		}))
 
 		svc := secretsmanager.New(sess)
 
 		input := &secretsmanager.GetSecretValueInput{
-			SecretId: awssdk.String(awsSecretRef.AwsSecretArn), // replace with your secret name
+			SecretId:     awssdk.String(awsSecretArn),
+			VersionStage: awssdk.String("AWSCURRENT"),
 		}
 
 		result, err := svc.GetSecretValue(input)

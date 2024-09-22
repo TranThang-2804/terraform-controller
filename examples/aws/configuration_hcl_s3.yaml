@@ -7,7 +7,7 @@ spec:
   path: aws/s3
 
   variable:
-    bucket: "vela-website-aws-202101019"
+    bucket: "vela-website-aws-tommy1234"
     acl: "private"
 
   providerRef:

@@ -59,13 +59,19 @@ spec:
                       namespace:
                         description: Namespace of the secret.
                         type: string
-                  awsSecretRef:
-                    awsSecretArn:
-                      description: (AWS Secret source only) AWS Secret Arn Ref
-                      type: string
                     required:
                     - key
                     - name
+                    type: object
+                  awsSecretRef:
+                    description: A SecretRef is a reference to a secret key that contains
+                      the credentials that must be used to connect to the provider.
+                    properties:
+                      awsSecretArn:
+                        description: (AWS Secret source only) AWS Secret Arn Ref
+                        type: string
+                    required:
+                    - awsSecretArn
                     type: object
                   source:
                     description: Source of the provider credentials.

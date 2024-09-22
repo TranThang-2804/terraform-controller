@@ -33,3 +33,4 @@ bin/manager
 
 # Secret for git server 
 examples/git-credentials/git-ssh-auth-secret.yaml
+.env
