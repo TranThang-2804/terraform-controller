@@ -124,7 +124,7 @@ func GetProviderCredentials(ctx context.Context, k8sClient client.Client, provid
 		var secret v1.Secret
 		secretRef := provider.Spec.Credentials.SecretRef
 		awsSecretArn := provider.Spec.Credentials.AwsSecretRef.AwsSecretArn
-    region := provider.Spec.Region
+    awsSecretRegion := provider.Spec.Credentials.AwsSecretRef.AwsSecretRegion
 		name := secretRef.Name
 		namespace := secretRef.Namespace
 		if err := k8sClient.Get(ctx, client.ObjectKey{Name: name, Namespace: namespace}, &secret); err != nil {
@@ -138,13 +138,13 @@ func GetProviderCredentials(ctx context.Context, k8sClient client.Client, provid
 			return nil, errors.Errorf("in the provider %s, the key %s not found in the referenced secret %s", provider.Name, secretRef.Key, name)
 		}
 
-		credential, err := getAWSCredentials(secretData, name, namespace, region)
+		credential, err := getAWSCredentials(secretData, name, namespace, awsSecretRegion)
 		if err != nil {
 			return nil, err
 		}
 
 		sess := session.Must(session.NewSession(&awssdk.Config{
-			Region: awssdk.String(region),
+			Region: awssdk.String(awsSecretRegion),
 			Credentials: credentials.NewStaticCredentials(
 				credential[EnvAWSAccessKeyID],
 				credential[EnvAWSSecretAccessKey],

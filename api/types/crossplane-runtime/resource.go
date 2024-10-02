@@ -61,6 +61,8 @@ type SecretReference struct {
 type AwsSecretReference struct {
 	// Arn of the secret.
 	AwsSecretArn string `json:"awsSecretArn"`
+	// Region of the secret.
+	AwsSecretRegion string `json:"awsSecretRegion"`
 }
 
 // A Reference to a named object.

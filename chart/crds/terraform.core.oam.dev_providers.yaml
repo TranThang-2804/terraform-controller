@@ -70,8 +70,12 @@ spec:
                       awsSecretArn:
                         description: (AWS Secret source only) AWS Secret Arn Ref
                         type: string
+                      awsSecretRegion:
+                        description: (AWS Secret source only) AWS Secret Region
+                        type: string
                     required:
                     - awsSecretArn
+                    - awsSecretRegion
                     type: object
                   source:
                     description: Source of the provider credentials.
